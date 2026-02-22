@@ -29,3 +29,13 @@ describe('StateMachine', async () => {
     })
   })
 })
+
+describe('StateMachine Recovery', async () => {
+  it('should allow recovery from blocked to idle', async () => {
+    const { StateMachine } = await import('../agent-state-machine')
+    const sm = new StateMachine('agent-1')
+    sm.transition('blocked')
+    sm.recover()
+    expect(sm.state).toBe('idle')
+  })
+})

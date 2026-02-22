@@ -43,6 +43,18 @@ export class StateMachine extends EventEmitter {
     return true
   }
 
+  recover(): void {
+    if (this._state === 'blocked') {
+      const oldState = this._state
+      this._state = 'idle'
+      this.emit('state-change', {
+        agentId: this.agentId,
+        from: oldState,
+        to: 'idle'
+      })
+    }
+  }
+
   private isValidTransition(newState: State): boolean {
     if (this._state === 'blocked' && newState !== 'idle') {
       return false
