@@ -9,6 +9,20 @@ A visual multi-agent coordination interface built with Next.js 15, React 19, and
 - **TaskPanel** - Tabbed task management with priority badges (P0/P1/P2) and approval workflow
 - **TownCrierFeed** - Real-time event feed with filtering and "new" event highlighting
 
+## Screenshots
+
+<img src="docs/screenshots/town-canvas.png" alt="Town Canvas" width="800"/>
+*Town Canvas with agents and markers*
+
+<img src="docs/screenshots/town-crier-feed.png" alt="Town Crier Feed" width="400"/>
+*Live event feed*
+
+<img src="docs/screenshots/agent-sprites.png" alt="Agent Sprites" width="800"/>
+*Agent avatars/status*
+
+<img src="docs/screenshots/task-panel.png" alt="Task Panel" width="400"/>
+*Filters and approval UI*
+
 ## Tech Stack
 
 - **Framework**: Next.js 15 (App Router)
