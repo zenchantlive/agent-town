@@ -16,11 +16,15 @@ export class BeadsAdapter {
   }
 
   private parseIssuesOutput(output: string): any[] {
-    const lines = output.split('\n')
+    // Strip all ANSI escape codes from output
+    const cleanOutput = output.replace(/\x1b\[[0-9;]*m/g, '')
+    const lines = cleanOutput.split('\n')
     const issues: any[] = []
-    
+
     for (const line of lines) {
-      const match = line.match(/([A-Z]{2}-\w+)\s*[●○]\s*[P0-4]\s*(.+)/)
+      // Match: [ID] [separator] [priority] [title]
+      // Format: "AT-123 ● P0 Test Issue"
+      const match = line.match(/([A-Z]{2}-\w+)\s*●\s*P[0-4]\s*(.+)/)
       if (match) {
         issues.push({
           id: match[1],
@@ -28,7 +32,7 @@ export class BeadsAdapter {
         })
       }
     }
-    
+
     return issues
   }
 }
