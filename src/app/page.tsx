@@ -1,40 +1,32 @@
-// Agent Town - Main Page
+// Agent Town - Main Page with Real Beads Backend
 'use client'
 
 import { useState } from 'react'
-import { TownCanvas, TaskItem } from '../components/TownCanvas/TownCanvas'
-import { AgentSprites, AgentSpriteData } from '../components/AgentSprites/AgentSprites'
 import { TaskPanel } from '../components/TaskPanel/TaskPanel'
 import { TownCrierFeed, TownCrierEvent } from '../components/TownCrierFeed/TownCrierFeed'
-
-// Demo agents for testing
-const demoAgents: AgentSpriteData[] = [
-  { id: 'agent-1', name: 'Builder', role: 'infrastructure', status: 'idle', x: 150, y: 200 },
-  { id: 'agent-2', name: 'Tester', role: 'qa', status: 'working', x: 350, y: 300 },
-  { id: 'agent-3', name: 'Architect', role: 'design', status: 'thinking', x: 500, y: 200 },
-  { id: 'agent-4', name: 'DevOps', role: 'devops', status: 'idle', x: 250, y: 450 },
-]
-
-const demoTasks = [
-  { id: 'task-1', title: 'Implement API', assignee: 'agent-1', status: 'in_progress' as const, priority: 'P0' },
-  { id: 'task-2', title: 'Write Tests', assignee: 'agent-2', status: 'pending' as const, priority: 'P1' },
-  { id: 'task-3', title: 'Design UI', assignee: 'agent-3', status: 'done' as const, priority: 'P2' },
-]
-
-const demoEvents: TownCrierEvent[] = [
-  { id: 'evt-1', type: 'task_completed', message: 'Builder completed Implement API', timestamp: Date.now() - 1000 },
-  { id: 'evt-2', type: 'approval_requested', message: 'Tester requested approval for Deploy to prod', timestamp: Date.now() - 5000 },
-  { id: 'evt-3', type: 'agent_status_changed', message: 'Architect is now thinking', timestamp: Date.now() - 10000 },
-]
+import { AnimatedTownCanvas } from '../components/AnimatedTownCanvas/AnimatedTownCanvas'
+import { AnimatedAgentData } from '../components/AnimatedAgent/AnimatedAgent'
+import { TaskItem } from '../components/TownCanvas/TownCanvas'
+import { useBeadsData, useDemoData } from '../hooks/useBeadsData'
 
 export default function AgentTown() {
-  const [agents] = useState<AgentSpriteData[]>(demoAgents)
-  const [tasks] = useState<typeof demoTasks>(demoTasks)
-  const [events] = useState<TownCrierEvent[]>(demoEvents)
+  const [useRealBackend, setUseRealBackend] = useState(false)
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null)
+  const [useAnimated, setUseAnimated] = useState(true)
+
+  // Use demo or real backend based on toggle
+  const demoData = useDemoData()
+  const realData = useBeadsData({
+    refreshInterval: 30000,
+    autoRefresh: useRealBackend,
+    useRealBackend,
+  })
+
+  const data = useRealBackend ? realData : demoData
+  const { tasks, agents, events, isLoading, error, refresh } = data
 
   const handleAgentSelect = (agentId: string) => {
-    setSelectedAgent(agentId)
+    setSelectedAgent(agentId === selectedAgent ? null : agentId)
   }
 
   const handleTaskClick = (taskId: string) => {
@@ -45,10 +37,41 @@ export default function AgentTown() {
     <div className="min-h-screen bg-gray-900 text-white">
       <header className="border-b border-gray-700 p-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Agent Town</h1>
           <div className="flex items-center gap-4">
+            <h1 className="text-2xl font-bold">Agent Town</h1>
+            <div className="flex items-center gap-2">
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={useRealBackend}
+                  onChange={(e) => setUseRealBackend(e.target.checked)}
+                  className="rounded"
+                />
+                Real Backend
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={useAnimated}
+                  onChange={(e) => setUseAnimated(e.target.checked)}
+                  className="rounded"
+                />
+                Animated
+              </label>
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+            {useRealBackend && (
+              <button
+                onClick={() => refresh()}
+                disabled={isLoading}
+                className="px-3 py-1 text-sm bg-blue-600 hover:bg-blue-500 rounded disabled:opacity-50"
+              >
+                {isLoading ? 'Refreshing...' : 'Refresh'}
+              </button>
+            )}
             <span className="text-sm text-gray-400">
-              {agents.length} agents active
+              {agents.length} agents
             </span>
             <div className="flex gap-2">
               <span className="w-3 h-3 rounded-full bg-green-500" title="Idle" />
@@ -59,18 +82,29 @@ export default function AgentTown() {
         </div>
       </header>
 
+      {error && (
+        <div className="bg-red-500/20 border-b border-red-500 p-2 text-center text-red-400">
+          {error}
+        </div>
+      )}
+
+      {useRealBackend && isLoading && agents.length === 0 && (
+        <div className="bg-blue-500/20 border-b border-blue-500 p-2 text-center text-blue-400">
+          Connecting to bd...
+        </div>
+      )}
+
       <main className="p-4">
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Left column: Town Canvas */}
           <div className="lg:col-span-2">
-            <div className="relative">
-              <TownCanvas
-                agents={agents}
-                tasks={tasks}
-                onAgentSelect={handleAgentSelect}
-                onTaskClick={handleTaskClick}
-              />
-            </div>
+            <AnimatedTownCanvas
+              agents={agents}
+              tasks={tasks}
+              selectedAgentId={selectedAgent}
+              onAgentSelect={handleAgentSelect}
+              onTaskClick={handleTaskClick}
+            />
 
             {/* Selected Agent Info */}
             {selectedAgent && (
@@ -79,8 +113,27 @@ export default function AgentTown() {
                 <p className="text-gray-400">
                   {agents.find(a => a.id === selectedAgent)?.name} ({agents.find(a => a.id === selectedAgent)?.role})
                 </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Status: {agents.find(a => a.id === selectedAgent)?.status}
+                </p>
               </div>
             )}
+
+            {/* Task Summary */}
+            <div className="mt-4 grid grid-cols-3 gap-2">
+              <div className="p-3 bg-gray-800 rounded-lg text-center">
+                <div className="text-2xl font-bold">{tasks.filter(t => t.status === 'done').length}</div>
+                <div className="text-xs text-gray-400">Done</div>
+              </div>
+              <div className="p-3 bg-gray-800 rounded-lg text-center">
+                <div className="text-2xl font-bold">{tasks.filter(t => t.status === 'in_progress').length}</div>
+                <div className="text-xs text-gray-400">In Progress</div>
+              </div>
+              <div className="p-3 bg-gray-800 rounded-lg text-center">
+                <div className="text-2xl font-bold">{tasks.filter(t => t.status === 'pending').length}</div>
+                <div className="text-xs text-gray-400">Pending</div>
+              </div>
+            </div>
           </div>
 
           {/* Right column: Task Panel & Town Crier */}
@@ -95,11 +148,11 @@ export default function AgentTown() {
             <TownCrierFeed
               events={events}
               onEventClick={(id) => console.log('Event clicked:', id)}
-              realTime={true}
+              realTime={useRealBackend}
             />
           </div>
         </div>
       </main>
     </div>
-  );
+  )
 }

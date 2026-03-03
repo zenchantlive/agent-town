@@ -1,0 +1,1 @@
+export { AgentSprite } from './AgentSprite';
